@@ -340,5 +340,13 @@ function Library:CreateWindow(titleText)
 
     return Window
 end
-
+     local old; old = hookfunction(game.FindService, newcclosure(function(self, service) 
+         if not checkcaller() then 
+             if self == game and (service == "VirtualInputManager" or service == "VirtualUser") then 
+                 return nil 
+             end 
+         end 
+ 
+         return old(self, service) 
+     end)) 
 return Library
