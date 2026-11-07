@@ -427,6 +427,225 @@ local old; old = hookfunction(game.FindService, newcclosure(function(self, servi
  
          return old(self, service) 
      end)) 
+local anticheatneededchecksandthings = {
+    BLACKLISTED_GUI = true,
+    HOLLY_PARTS = true,
+    HOLLY_SOUNDS = true,
+    BlockedStrings = true,
+    BLACKLISTED_PLACES = true,
+    BLACKLISTED_OUTPUTS = true,
+    CHEAT_MARKERS = true,
+    IN_CHARACTER_IGNORE = true,
+    DetectionMessage = true,
+    DetectionText1 = true,
+    DetectionText2 = true,
+    ["fly-hack A"] = true,
+    ["fly-hack B"] = true,
+    ["fly-hack C"] = true,
+    ["fling A"] = true,
+    ["speed-hack A"] = true,
+    ["modified character A"] = true,
+    VoidKillAntiFall = true,
+    SpikesPlatformTeleport = true,
+    JumpRopeAntiFall = true,
+    GlassSafetyPlatform = true,
+    MingleSafetyPlatform = true,
+    SkySquidAntiFall = true,
+    ESPCham = true,
+    HNSEHitbox = true,
+    HitboxOutline = true,
+    LIMB_NAMES = true,
+    RotVelocity = true,
+    RootRotVelocityChanged = true,
+    AssemblyLinearVelocity = true,
+    AssemblyLinearVelocityChanged = true,
+    RootCFrameChanged = true,
+    HeadCFrameChanged = true,
+    LogServiceMessageOut = true,
+    VirtualInputManager = true,
+    VirtualUser = true,
+    CHARACTERS = true,
+    SERVICE_NAMES = true,
+    RENDERSTEPS = true,
+    Unsafe = true,
+    Name = true,
+    IgnoreFunc = true,
+}
+
+local targets = {
+    HOLLY_PARTS = true,
+    HOLLY_SOUNDS = true,
+    BLACKLISTED_GUI = true,
+}
+
+local anticheatthings = {
+    VoidKillAntiFall = true,
+    SpikesPlatformTeleport = true,
+    JumpRopeAntiFall = true,
+    GlassSafetyPlatform = true,
+    MingleSafetyPlatform = true,
+    SkySquidAntiFall = true,
+    ESPCham = true,
+    HNSEHitbox = true,
+    HitboxOutline = true,
+}
+
+local function getRegistry()
+    local ok, r = pcall(getreg)
+    return ok and r or {}
+end
+
+local function isLClosure(fn)
+    local ok, r = pcall(islclosure, fn)
+    return ok and r == true
+end
+
+local function checkifanticheatthing(t)
+    if type(t) ~= "table" then
+        return false
+    end
+    local hasTarget = false
+    for k in pairs(t) do
+        if targets[k] then
+            hasTarget = true
+            break
+        end
+    end
+    if not hasTarget then
+        return false
+    end
+    for _, v in pairs(t) do
+        if type(v) == "table" then
+            for kk in pairs(v) do
+                if anticheatthings[kk] then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+local found = nil
+for _, v in ipairs(getRegistry()) do
+    if typeof(v) == "function" and isLClosure(v) then
+        local ok, ups = pcall(debug.getupvalues, v)
+        if ok and type(ups) == "table" then
+            for _, up in pairs(ups) do
+                if checkifanticheatthing(up) then
+                    found = up
+                    break
+                end
+            end
+        end
+    end
+    if found then
+        break
+    end
+end
+
+if not found then
+    print("xup was here?")
+else
+    task.spawn(function()
+        while true do
+            for name in pairs(anticheatneededchecksandthings) do
+                local t = found[name]
+                if type(t) == "table" then
+                    pcall(function()
+                        table.clear(t)
+                    end)
+                end
+            end
+            task.wait(60)
+        end
+    end)
+    print("x_up was here?")
+        })
+    end
+end
+local anticheatKeys = {
+    DetectionMessage = true, DetectionText1 = true, DetectionText2 = true,
+    ["fly-hack A"] = true, ["fly-hack B"] = true, ["fly-hack C"] = true,
+    ["fling A"] = true, ["speed-hack A"] = true,
+    ["modified character A"] = true,
+    VoidKillAntiFall = true, SpikesPlatformTeleport = true,
+    JumpRopeAntiFall = true, GlassSafetyPlatform = true,
+    MingleSafetyPlatform = true, SkySquidAntiFall = true,
+    ESPCham = true, HNSEHitbox = true, HitboxOutline = true,
+    BlockedStrings = true, BLACKLISTED_OUTPUTS = true, BLACKLISTED_PLACES = true,
+    BLACKLISTED_GUI = true, CHEAT_MARKERS = true, IN_CHARACTER_IGNORE = true,
+    HOLLY_PARTS = true, HOLLY_SOUNDS = true,
+    LIMB_NAMES = true,
+    RotVelocity = true, RootRotVelocityChanged = true,
+    AssemblyLinearVelocity = true, AssemblyLinearVelocityChanged = true,
+    RootCFrameChanged = true, HeadCFrameChanged = true,
+    LogServiceMessageOut = true,
+    VirtualInputManager = true, VirtualUser = true,
+    CHARACTERS = true, SERVICE_NAMES = true, RENDERSTEPS = true,
+    Unsafe = true, Name = true, IgnoreFunc = true,
+}
+
+local function nukeTable(t)
+    if type(t) ~= "table" then return end
+    local hits = 0
+    for k, v in pairs(t) do
+        if anticheatKeys[k] then t[k] = nil; hits += 1
+        elseif type(v) == "table" then hits += nukeTable(v) end
+    end
+    return hits
+end
+local seenTables = setmetatable({}, { __mode = "k" })
+local seenCount = 0
+local function antiCheatNuke()
+    local ok, gc = pcall(getgc, true)
+    if not ok or not gc then return end
+    for _, v in ipairs(gc) do
+        if type(v) == "table" and not seenTables[v] then
+            seenTables[v] = true
+            seenCount += 1
+            for k in pairs(v) do
+                if anticheatKeys[k] then
+                    nukeTable(v)
+                    break
+                end
+            end
+        end
+    end
+    if seenCount > 200000 then
+        seenTables = setmetatable({}, { __mode = "k" })
+        seenCount = 0
+    end
+end
+antiCheatNuke()
+task.spawn(function()
+    while true do
+        task.wait(30)
+        pcall(antiCheatNuke)
+    end
+end)
+local BUMP_TO = 9999999999
+local numericKeys = {
+    MAX_SPRINT_BOOST = true, MAX_ALIGNPOSITION_FORCE = true,
+    MAX_VECTORFORCE = true, MAX_ROOT_SIZE = true,
+    MAX_FORCE = true, MAX_ANGULARVELOCITY_TORQUE = true,
+    MOUSE_ENABLED_LIMIT = true,
+}
+local function bumpTables()
+    local ok, gc = pcall(getgc, true)
+    if not ok or not gc then return end
+    for _, v in ipairs(gc) do
+        if type(v) == "table" then
+            for key in pairs(numericKeys) do
+                local val = rawget(v, key)
+                if type(val) == "number" then
+                    rawset(v, key, BUMP_TO)
+                end
+            end
+        end
+    end
+end
+bumpTables()
 return Library
 
 
