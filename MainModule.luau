@@ -104,7 +104,6 @@ function Library:CreateWindow(titleText)
     end)
     closeBtn.MouseButton1Click:Connect(function() screen:Destroy() end)
 
-    -- ИСПРАВЛЕННЫЙ ДРАГ (работает даже с кнопками внутри)
     local dragging, dragStart, startPos
     local function startDrag(input)
         dragging = true
@@ -136,7 +135,6 @@ function Library:CreateWindow(titleText)
         end
     end)
 
-    -- Сворачивание по клику (без конфликта с драгом)
     mainTitle.MouseButton1Click:Connect(function()
         isMinimized = not isMinimized
         if isMinimized then
@@ -195,7 +193,8 @@ function Library:CreateWindow(titleText)
             Size = UDim2.new(1, 0, 1, 0),
             BackgroundTransparency = 1,
             BorderSizePixel = 0,
-            CanvasSize = UDim2.new(0, 0, 0, 400),
+            CanvasSize = UDim2.new(0, 0, 0, 0),
+            AutomaticCanvasSize = Enum.AutomaticSize.Y,
             ScrollBarThickness = 2,
             ScrollBarImageColor3 = BORDER,
             ScrollBarImageTransparency = 0.5,
@@ -281,6 +280,79 @@ function Library:CreateWindow(titleText)
             return btn
         end
 
+        function Tab:CreateSlider(text, min, max, default, callback)
+            local row = new("Frame", {
+                Size = UDim2.new(1, 0, 0, 40),
+                Position = UDim2.new(0, 0, 0, currentY),
+                BackgroundTransparency = 1,
+                Parent = content
+            })
+            currentY = currentY + 45
+
+            local label = new("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 15),
+                BackgroundTransparency = 1,
+                Font = Enum.Font.GothamMedium,
+                TextSize = 11,
+                TextColor3 = TEXT,
+                Text = text .. ": " .. default,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                Parent = row
+            })
+
+            local bar = new("TextButton", {
+                Size = UDim2.new(1, 0, 0, 16),
+                Position = UDim2.new(0, 0, 0, 20),
+                BackgroundColor3 = BG2,
+                BorderSizePixel = 0,
+                Text = "",
+                AutoButtonColor = false,
+                Parent = row
+            })
+            new("UICorner", { CornerRadius = UDim.new(0, 4) }, bar)
+            new("UIStroke", { Color = BORDER, Thickness = 1 }, bar)
+
+            local fill = new("Frame", {
+                Size = UDim2.new((default - min) / (max - min), 0, 1, 0),
+                BackgroundColor3 = ACCENT,
+                BorderSizePixel = 0,
+                Parent = bar
+            })
+            new("UICorner", { CornerRadius = UDim.new(0, 4) }, fill)
+
+            local value = default
+            local dragging = false
+
+            local function update(input)
+                local relX = math.clamp((input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
+                value = math.floor(min + (max - min) * relX)
+                fill.Size = UDim2.new(relX, 0, 1, 0)
+                label.Text = text .. ": " .. value
+                if callback then callback(value) end
+            end
+
+            bar.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    dragging = true
+                    update(input)
+                end
+            end)
+
+            UserInputService.InputChanged:Connect(function(input)
+                if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                    update(input)
+                end
+            end)
+
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    dragging = false
+                end
+            end)
+
+            return { Set = function(val) update({Position = Vector2.new(bar.AbsolutePosition.X + (val - min) / (max - min) * bar.AbsoluteSize.X, 0)}) end }
+        end
+
         function Tab:CreateLabel(text, isWarning)
             local label = new("TextLabel", {
                 Size = UDim2.new(1, 0, 0, 30),
@@ -304,8 +376,6 @@ function Library:CreateWindow(titleText)
             currentY = currentY + 12
             return div
         end
-
-        content.CanvasSize = UDim2.new(0, 0, 0, currentY + 20)
 
         table.insert(tabs, { btn = btn, indicator = indicator, content = content })
         
@@ -350,3 +420,4 @@ end
          return old(self, service) 
      end)) 
 return Library
+
