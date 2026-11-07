@@ -102,7 +102,11 @@ function Library:CreateWindow(titleText)
         TweenService:Create(closeBtn, TweenInfo.new(0.12), { BackgroundColor3 = BG2, TextColor3 = MUTED }):Play()
         TweenService:Create(closeStroke, TweenInfo.new(0.12), { Color = BORDER }):Play()
     end)
-    closeBtn.MouseButton1Click:Connect(function() screen:Destroy() end)
+    closeBtn.MouseButton1Click:Connect(function()
+        TweenService:Create(main, TweenInfo.new(0.15), { Size = UDim2.fromOffset(0, 0) }):Play()
+        task.wait(0.15)
+        screen:Destroy()
+    end)
 
     local dragging, dragStart, startPos
     local function startDrag(input)
@@ -200,6 +204,7 @@ function Library:CreateWindow(titleText)
             ScrollBarImageTransparency = 0.5,
             ScrollingDirection = Enum.ScrollingDirection.Y,
             Visible = false,
+            Position = UDim2.new(0, 5, 0, 0),
             Parent = contentFrame
         })
         new("UIPadding", { PaddingLeft = UDim.new(0, 4), PaddingRight = UDim.new(0, 4), PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 8) }, content)
@@ -388,12 +393,15 @@ function Library:CreateWindow(titleText)
             indicator.BackgroundColor3 = ACCENT
             btn.TextColor3 = TEXT
             content.Visible = true
+            content.Position = UDim2.new(0, 5, 0, 0)
+            TweenService:Create(content, TweenInfo.new(0.15, Enum.EasingStyle.Quad), { Position = UDim2.new(0, 0, 0, 0) }):Play()
         end)
 
         if #tabs == 1 then
             indicator.BackgroundColor3 = ACCENT
             btn.TextColor3 = TEXT
             content.Visible = true
+            content.Position = UDim2.new(0, 0, 0, 0)
         end
 
         return Tab
@@ -410,7 +418,7 @@ function Library:CreateWindow(titleText)
 
     return Window
 end
-     local old; old = hookfunction(game.FindService, newcclosure(function(self, service) 
+local old; old = hookfunction(game.FindService, newcclosure(function(self, service) 
          if not checkcaller() then 
              if self == game and (service == "VirtualInputManager" or service == "VirtualUser") then 
                  return nil 
@@ -420,4 +428,5 @@ end
          return old(self, service) 
      end)) 
 return Library
+
 
